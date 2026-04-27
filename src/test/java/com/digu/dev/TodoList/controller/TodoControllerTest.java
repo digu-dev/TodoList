@@ -152,10 +152,6 @@ class TodoControllerTest {
     void updateById_returns409WhenDuplicated() throws Exception {
         UUID id = UUID.randomUUID();
         when(service.findById(id)).thenReturn(Optional.of(buildEntity(id)));
-        when(service.findById(id)).thenReturn(Optional.of(buildEntity(id)));
-        doNothing().when(service).update(any(TodoEntity.class));
-
-        // Simulate DuplicatedRegisteredException thrown by update
         org.mockito.Mockito.doThrow(new DuplicatedRegisteredException("duplicate title"))
                 .when(service).update(any(TodoEntity.class));
 
