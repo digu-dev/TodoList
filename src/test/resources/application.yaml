@@ -12,3 +12,20 @@ spring:
     properties:
       hibernate.format_sql: true
       hibernate.globally_quoted_identifiers: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+          github:
+            client-id: test-github-client-id
+            client-secret: test-github-client-secret
+
+app:
+  jwt:
+    secret: test-secret-key-for-testing-only-must-be-at-least-32
+    expiration-ms: 86400000
+  oauth2:
+    redirect-uri: http://localhost:3000/oauth2/redirect

@@ -17,18 +17,25 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.digu.dev.TodoList.dto.TodoDto;
 import com.digu.dev.TodoList.exceptions.DuplicatedRegisteredException;
 import com.digu.dev.TodoList.model.TodoEntity;
+import com.digu.dev.TodoList.repository.UserRepository;
+import com.digu.dev.TodoList.security.JwtUtil;
+import com.digu.dev.TodoList.security.OAuth2AuthenticationSuccessHandler;
+import com.digu.dev.TodoList.service.CustomOAuth2UserService;
 import com.digu.dev.TodoList.service.TodoService;
 import tools.jackson.databind.ObjectMapper;
 
-@WebMvcTest(TodoController.class)
+@WithMockUser
+@WebMvcTest(value = TodoController.class, excludeAutoConfiguration = OAuth2ClientWebSecurityAutoConfiguration.class)
 class TodoControllerTest {
 
     @Autowired
@@ -39,6 +46,18 @@ class TodoControllerTest {
 
     @MockitoBean
     private TodoService service;
+
+    @MockitoBean
+    private JwtUtil jwtUtil;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
+    private CustomOAuth2UserService customOAuth2UserService;
+
+    @MockitoBean
+    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     private TodoEntity buildEntity(UUID id) {
         TodoEntity e = new TodoEntity();
