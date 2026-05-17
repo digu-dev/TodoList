@@ -2,11 +2,13 @@ package com.digu.dev.TodoList.controller;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,14 +68,13 @@ public class TodoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TodoEntity>> findAll(){
+    public ResponseEntity<Object> findAll(Authentication authentication) {
         List<TodoEntity> todos = service.findAll();
-       if(todos.isEmpty()){
-        return ResponseEntity.notFound().build();
-       } else {
+        if (todos.isEmpty()) {
+            String username = authentication != null ? authentication.getName() : "Guest";
+            return ResponseEntity.ok(Map.of("message", "Welcome, " + username + "! No todos found."));
+        }
         return ResponseEntity.ok(todos);
-       }
-
     }
 
     @PutMapping("/{id}")

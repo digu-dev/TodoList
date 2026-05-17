@@ -12,3 +12,9 @@ spring:
     properties:
       hibernate.format_sql: true
       hibernate.globally_quoted_identifiers: true
+
+app:
+  security:
+    jwt:
+      secret: bXktc3VwZXItc2VjcmV0LWtleS1mb3Itand0LWF1dGg=
+      expiration: 86400000
