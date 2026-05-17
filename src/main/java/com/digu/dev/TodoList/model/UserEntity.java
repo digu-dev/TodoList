@@ -11,37 +11,28 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.ToString;
 
 @Entity
 @Data
 @ToString
-@Table(name = "app_users", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_users_provider_provider_id", columnNames = {"provider", "providerId"})
-})
+@Table(name = "app_users")
 public class UserEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String username;
 
+    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private UserRole role;
-
-    private String name;
-
-    private String email;
-
-    private String provider;
-
-    private String providerId;
 
     private LocalDateTime createdAt;
 
