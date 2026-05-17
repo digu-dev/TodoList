@@ -18,32 +18,24 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.digu.dev.TodoList.dto.TodoDto;
 import com.digu.dev.TodoList.exceptions.DuplicatedRegisteredException;
 import com.digu.dev.TodoList.model.TodoEntity;
-import com.digu.dev.TodoList.repository.UserRepository;
 import com.digu.dev.TodoList.security.JwtAuthFilter;
-import com.digu.dev.TodoList.security.JwtAuthenticationFilter;
-import com.digu.dev.TodoList.security.JwtUtil;
-import com.digu.dev.TodoList.security.OAuth2AuthenticationSuccessHandler;
 import com.digu.dev.TodoList.security.SecurityConfig;
-import com.digu.dev.TodoList.service.CustomOAuth2UserService;
 import com.digu.dev.TodoList.service.JwtService;
 import com.digu.dev.TodoList.service.TodoService;
 import com.digu.dev.TodoList.service.UserDetailsServiceImpl;
 import tools.jackson.databind.ObjectMapper;
 
-@WithMockUser
-@WebMvcTest(value = TodoController.class, excludeAutoConfiguration = OAuth2ClientWebSecurityAutoConfiguration.class)
-@Import({SecurityConfig.class, JwtAuthFilter.class, JwtAuthenticationFilter.class})
+@WebMvcTest(TodoController.class)
+@Import({SecurityConfig.class, JwtAuthFilter.class})
 class TodoControllerTest {
 
     @Autowired
@@ -57,18 +49,6 @@ class TodoControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
-
-    @MockitoBean
-    private JwtUtil jwtUtil;
-
-    @MockitoBean
-    private UserRepository userRepository;
-
-    @MockitoBean
-    private CustomOAuth2UserService customOAuth2UserService;
-
-    @MockitoBean
-    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @MockitoBean
     private UserDetailsServiceImpl userDetailsService;
