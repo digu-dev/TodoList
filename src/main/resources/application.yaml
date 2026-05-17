@@ -12,6 +12,7 @@ spring:
       ddl-auto: update
     properties:
       hibernate.format_sql: true
+      hibernate.globally_quoted_identifiers: true
   security:
     oauth2:
       client:
@@ -31,6 +32,11 @@ spring:
               - user:email
 
 app:
+  security:
+    jwt:
+      # Base64-encoded 256-bit secret key (change in production)
+      secret: ${APP_SECURITY_JWT_SECRET:bXktc3VwZXItc2VjcmV0LWtleS1mb3Itand0LWF1dGg=}
+      expiration: 86400000  # 24 hours in milliseconds
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: 86400000

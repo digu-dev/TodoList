@@ -1,12 +1,15 @@
 package com.digu.dev.TodoList.repository;
 
-import com.digu.dev.TodoList.model.UserEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.digu.dev.TodoList.model.UserEntity;
+
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
+
+    Optional<UserEntity> findByUsername(String username);
 
     Optional<UserEntity> findByProviderAndProviderId(String provider, String providerId);
 }

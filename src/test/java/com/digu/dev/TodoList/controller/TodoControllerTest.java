@@ -3,6 +3,7 @@ package com.digu.dev.TodoList.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -28,14 +30,20 @@ import com.digu.dev.TodoList.dto.TodoDto;
 import com.digu.dev.TodoList.exceptions.DuplicatedRegisteredException;
 import com.digu.dev.TodoList.model.TodoEntity;
 import com.digu.dev.TodoList.repository.UserRepository;
+import com.digu.dev.TodoList.security.JwtAuthFilter;
+import com.digu.dev.TodoList.security.JwtAuthenticationFilter;
 import com.digu.dev.TodoList.security.JwtUtil;
 import com.digu.dev.TodoList.security.OAuth2AuthenticationSuccessHandler;
+import com.digu.dev.TodoList.security.SecurityConfig;
 import com.digu.dev.TodoList.service.CustomOAuth2UserService;
+import com.digu.dev.TodoList.service.JwtService;
 import com.digu.dev.TodoList.service.TodoService;
+import com.digu.dev.TodoList.service.UserDetailsServiceImpl;
 import tools.jackson.databind.ObjectMapper;
 
 @WithMockUser
 @WebMvcTest(value = TodoController.class, excludeAutoConfiguration = OAuth2ClientWebSecurityAutoConfiguration.class)
+@Import({SecurityConfig.class, JwtAuthFilter.class, JwtAuthenticationFilter.class})
 class TodoControllerTest {
 
     @Autowired
@@ -48,6 +56,9 @@ class TodoControllerTest {
     private TodoService service;
 
     @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
     private JwtUtil jwtUtil;
 
     @MockitoBean
@@ -58,6 +69,9 @@ class TodoControllerTest {
 
     @MockitoBean
     private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+
+    @MockitoBean
+    private UserDetailsServiceImpl userDetailsService;
 
     private TodoEntity buildEntity(UUID id) {
         TodoEntity e = new TodoEntity();
@@ -81,6 +95,7 @@ class TodoControllerTest {
         when(service.create(any(TodoDto.class))).thenReturn(buildEntity(id));
 
         mockMvc.perform(post("/api/todos")
+                        .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(buildDto())))
                 .andExpect(status().isCreated());
@@ -92,11 +107,20 @@ class TodoControllerTest {
                 .thenThrow(new DuplicatedRegisteredException("Todo already exists"));
 
         mockMvc.perform(post("/api/todos")
+                        .with(user("admin").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(buildDto())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("Todo already exists"));
+    }
+
+    @Test
+    void createTodo_returns403WhenUnauthenticated() throws Exception {
+        mockMvc.perform(post("/api/todos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(buildDto())))
+                .andExpect(status().isForbidden());
     }
 
     // ── GET /api/todos/{id} ──────────────────────────────────────────────────────
@@ -106,7 +130,8 @@ class TodoControllerTest {
         UUID id = UUID.randomUUID();
         when(service.findById(id)).thenReturn(Optional.of(buildEntity(id)));
 
-        mockMvc.perform(get("/api/todos/{id}", id))
+        mockMvc.perform(get("/api/todos/{id}", id)
+                        .with(user("user").roles("USER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Test Task"))
                 .andExpect(jsonPath("$.description").value("Test Description"))
@@ -118,7 +143,8 @@ class TodoControllerTest {
         UUID id = UUID.randomUUID();
         when(service.findById(id)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/todos/{id}", id))
+        mockMvc.perform(get("/api/todos/{id}", id)
+                        .with(user("user").roles("USER")))
                 .andExpect(status().isNotFound());
     }
 
@@ -129,17 +155,20 @@ class TodoControllerTest {
         UUID id = UUID.randomUUID();
         when(service.findAll()).thenReturn(List.of(buildEntity(id)));
 
-        mockMvc.perform(get("/api/todos"))
+        mockMvc.perform(get("/api/todos")
+                        .with(user("user").roles("USER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").value("Test Task"));
     }
 
     @Test
-    void findAll_returns404WhenEmpty() throws Exception {
+    void findAll_returns200WithWelcomeMessageWhenEmpty() throws Exception {
         when(service.findAll()).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/todos"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/todos")
+                        .with(user("testuser").roles("USER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Welcome, testuser! No todos found."));
     }
 
     // ── PUT /api/todos/{id} ──────────────────────────────────────────────────────
@@ -151,6 +180,7 @@ class TodoControllerTest {
         doNothing().when(service).update(any(TodoEntity.class));
 
         mockMvc.perform(put("/api/todos/{id}", id)
+                        .with(user("user").roles("USER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(buildDto())))
                 .andExpect(status().isNoContent());
@@ -162,6 +192,7 @@ class TodoControllerTest {
         when(service.findById(id)).thenReturn(Optional.empty());
 
         mockMvc.perform(put("/api/todos/{id}", id)
+                        .with(user("user").roles("USER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(buildDto())))
                 .andExpect(status().isNotFound());
@@ -175,6 +206,7 @@ class TodoControllerTest {
                 .when(service).update(any(TodoEntity.class));
 
         mockMvc.perform(put("/api/todos/{id}", id)
+                        .with(user("user").roles("USER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(buildDto())))
                 .andExpect(status().isConflict());
@@ -188,7 +220,8 @@ class TodoControllerTest {
         when(service.findById(id)).thenReturn(Optional.of(buildEntity(id)));
         doNothing().when(service).delete(any(TodoEntity.class));
 
-        mockMvc.perform(delete("/api/todos/{id}", id))
+        mockMvc.perform(delete("/api/todos/{id}", id)
+                        .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isNoContent());
     }
 
@@ -197,7 +230,18 @@ class TodoControllerTest {
         UUID id = UUID.randomUUID();
         when(service.findById(id)).thenReturn(Optional.empty());
 
-        mockMvc.perform(delete("/api/todos/{id}", id))
+        mockMvc.perform(delete("/api/todos/{id}", id)
+                        .with(user("admin").roles("ADMIN")))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void deleteById_returns403ForUserRole() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/todos/{id}", id)
+                        .with(user("user").roles("USER")))
+                .andExpect(status().isForbidden());
+    }
+
 }
