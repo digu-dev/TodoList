@@ -17,6 +17,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -27,15 +28,20 @@ import com.digu.dev.TodoList.dto.UserDto;
 import com.digu.dev.TodoList.exceptions.DuplicatedRegisteredException;
 import com.digu.dev.TodoList.model.UserEntity;
 import com.digu.dev.TodoList.model.UserRole;
+import com.digu.dev.TodoList.repository.UserRepository;
 import com.digu.dev.TodoList.security.JwtAuthFilter;
+import com.digu.dev.TodoList.security.JwtAuthenticationFilter;
+import com.digu.dev.TodoList.security.JwtUtil;
+import com.digu.dev.TodoList.security.OAuth2AuthenticationSuccessHandler;
 import com.digu.dev.TodoList.security.SecurityConfig;
+import com.digu.dev.TodoList.service.CustomOAuth2UserService;
 import com.digu.dev.TodoList.service.JwtService;
 import com.digu.dev.TodoList.service.UserDetailsServiceImpl;
 import com.digu.dev.TodoList.service.UserService;
 import tools.jackson.databind.ObjectMapper;
 
-@WebMvcTest(UserController.class)
-@Import({SecurityConfig.class, JwtAuthFilter.class})
+@WebMvcTest(value = UserController.class, excludeAutoConfiguration = OAuth2ClientWebSecurityAutoConfiguration.class)
+@Import({SecurityConfig.class, JwtAuthFilter.class, JwtAuthenticationFilter.class})
 class UserControllerTest {
 
     @Autowired
@@ -49,6 +55,18 @@ class UserControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private JwtUtil jwtUtil;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
+    private CustomOAuth2UserService customOAuth2UserService;
+
+    @MockitoBean
+    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @MockitoBean
     private UserDetailsServiceImpl userDetailsService;
